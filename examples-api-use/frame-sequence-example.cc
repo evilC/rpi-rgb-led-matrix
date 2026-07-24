@@ -155,7 +155,7 @@ static ImageVector LoadAndScaleFrames(const char *filename,
 
 static int usage(const char *progname) {
   fprintf(stderr,
-          "Usage: %s [led-matrix-options] <image-or-fseq> [-o <output.fseq>]\n",
+          "Usage: %s [led-matrix-options] <image-or-fseq> [-O <output.fseq>]\n",
           progname);
   rgb_matrix::PrintMatrixFlags(stderr);
   return 1;
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
   const char *filename = argv[1];
   const char *output_fseq = NULL;
   if (argc == 4) {
-    if (strcmp(argv[2], "-o") != 0) {
+    if (strcmp(argv[2], "-O") != 0) {
       return usage(progname);
     }
     output_fseq = argv[3];

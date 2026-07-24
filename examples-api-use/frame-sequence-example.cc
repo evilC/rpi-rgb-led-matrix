@@ -8,7 +8,10 @@
 
 #include <signal.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <string.h>
+#include <termios.h>
+#include <unistd.h>
 
 #include <exception>
 #include <Magick++.h>
@@ -20,6 +23,94 @@ volatile bool interrupt_received = false;
 static void InterruptHandler(int signo) {
   interrupt_received = true;
 }
+
+class ConsoleBrightnessControl {
+public:
+  explicit ConsoleBrightnessControl(int initial)
+      : initialized_(false), brightness_(Clamp(initial)), old_flags_(0) {
+    memset(&old_termios_, 0, sizeof(old_termios_));
+  }
+
+  bool Init() {
+    if (!isatty(STDIN_FILENO)) {
+      fprintf(stderr, "stdin is not a tty; interactive brightness disabled.\n");
+      return false;
+    }
+
+    if (tcgetattr(STDIN_FILENO, &old_termios_) != 0) {
+      perror("tcgetattr");
+      return false;
+    }
+    old_flags_ = fcntl(STDIN_FILENO, F_GETFL, 0);
+    if (old_flags_ < 0) {
+      perror("fcntl(F_GETFL)");
+      return false;
+    }
+
+    struct termios raw = old_termios_;
+    raw.c_lflag &= ~(ICANON | ECHO);
+    raw.c_cc[VMIN] = 0;
+    raw.c_cc[VTIME] = 0;
+
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &raw) != 0) {
+      perror("tcsetattr");
+      return false;
+    }
+    if (fcntl(STDIN_FILENO, F_SETFL, old_flags_ | O_NONBLOCK) != 0) {
+      perror("fcntl(F_SETFL)");
+      tcsetattr(STDIN_FILENO, TCSANOW, &old_termios_);
+      return false;
+    }
+
+    initialized_ = true;
+    fprintf(stderr,
+            "Brightness keys: '+' up, '-' down, 'q' quit (current: %d)\n",
+            brightness_);
+    return true;
+  }
+
+  ~ConsoleBrightnessControl() {
+    Restore();
+  }
+
+  int PollAndGetBrightness() {
+    if (!initialized_) return brightness_;
+
+    char c = 0;
+    while (read(STDIN_FILENO, &c, 1) == 1) {
+      if (c == '+' || c == '=') {
+        brightness_ = Clamp(brightness_ + 5);
+        fprintf(stderr, "\rBrightness: %d   ", brightness_);
+      } else if (c == '-' || c == '_') {
+        brightness_ = Clamp(brightness_ - 5);
+        fprintf(stderr, "\rBrightness: %d   ", brightness_);
+      } else if (c == 'q' || c == 'Q') {
+        interrupt_received = true;
+      }
+    }
+    return brightness_;
+  }
+
+private:
+  static int Clamp(int value) {
+    if (value < 1) return 1;
+    if (value > 100) return 100;
+    return value;
+  }
+
+  void Restore() {
+    if (!initialized_) return;
+    fcntl(STDIN_FILENO, F_SETFL, old_flags_);
+    tcsetattr(STDIN_FILENO, TCSANOW, &old_termios_);
+    fprintf(stderr, "\n");
+    initialized_ = false;
+  }
+
+  bool initialized_;
+  int brightness_;
+  struct termios old_termios_;
+  int old_flags_;
+};
 
 using ImageVector = std::vector<Magick::Image>;
 
@@ -165,7 +256,14 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  sequence.Play(matrix, &interrupt_received);
+  ConsoleBrightnessControl brightness_control(matrix_options.brightness);
+  const bool brightness_enabled = brightness_control.Init();
+  if (brightness_enabled) {
+    sequence.Play(matrix, &interrupt_received,
+                  [&brightness_control]() { return brightness_control.PollAndGetBrightness(); });
+  } else {
+    sequence.Play(matrix, &interrupt_received);
+  }
 
   matrix->Clear();
   delete matrix;

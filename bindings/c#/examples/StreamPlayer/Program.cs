@@ -43,7 +43,7 @@ var matrixOptions = new RGBLedMatrixOptions
         Cols = 128,
         Rows = 64,
         Parallel = 2,
-        GpioSlowdown = 2,
+        GpioSlowdown = 4,
         RowAddressType = 5
     };
 var streamPlayer = new StreamPlayer(matrixOptions);

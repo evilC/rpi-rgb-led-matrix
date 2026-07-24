@@ -13,6 +13,21 @@
 namespace rgb_matrix {
 
 namespace {
+static const uint32_t kFseqMagic = 0x51455346;  // "FSEQ"
+
+struct FseqHeader {
+  uint32_t magic;
+  uint32_t version;
+  uint32_t width;
+  uint32_t height;
+  uint32_t frame_count;
+  uint32_t frame_size;
+};
+
+struct FseqFrameHeader {
+  uint32_t hold_time_us;
+};
+
 static inline uint8_t ClampBrightness(int value) {
   if (value < 1) return 1;
   if (value > 100) return 100;
@@ -47,6 +62,117 @@ bool FrameSequence::AddFrame(const uint8_t *rgb24,
   memcpy(frame.rgb24.data(), rgb24, frame_size_);
   frame.hold_time_us = hold_time_us;
   frames_.push_back(frame);
+  return true;
+}
+
+bool FrameSequence::WriteToFile(const char *path) const {
+  if (path == NULL || frame_size_ == 0) {
+    return false;
+  }
+  if (frames_.size() > 0xFFFFFFFFu) {
+    return false;
+  }
+
+  FILE *f = fopen(path, "wb");
+  if (f == NULL) {
+    perror("Unable to open output file");
+    return false;
+  }
+
+  FseqHeader header = {};
+  header.magic = kFseqMagic;
+  header.version = 1;
+  header.width = static_cast<uint32_t>(width_);
+  header.height = static_cast<uint32_t>(height_);
+  header.frame_count = static_cast<uint32_t>(frames_.size());
+  header.frame_size = static_cast<uint32_t>(frame_size_);
+
+  if (fwrite(&header, sizeof(header), 1, f) != 1) {
+    fclose(f);
+    return false;
+  }
+
+  for (std::vector<Frame>::const_iterator it = frames_.begin();
+       it != frames_.end(); ++it) {
+    FseqFrameHeader fh = {};
+    fh.hold_time_us = it->hold_time_us;
+    if (fwrite(&fh, sizeof(fh), 1, f) != 1) {
+      fclose(f);
+      return false;
+    }
+    if (fwrite(it->rgb24.data(), 1, frame_size_, f) != frame_size_) {
+      fclose(f);
+      return false;
+    }
+  }
+
+  const bool ok = (fclose(f) == 0);
+  return ok;
+}
+
+bool FrameSequence::ReadFromFile(const char *path) {
+  if (path == NULL || frame_size_ == 0) {
+    return false;
+  }
+
+  FILE *f = fopen(path, "rb");
+  if (f == NULL) {
+    perror("Unable to open input file");
+    return false;
+  }
+
+  FseqHeader header = {};
+  if (fread(&header, sizeof(header), 1, f) != 1) {
+    fclose(f);
+    return false;
+  }
+
+  if (header.magic != kFseqMagic || header.version != 1) {
+    fclose(f);
+    fprintf(stderr, "Unsupported .fseq format in '%s'\n", path);
+    return false;
+  }
+
+  if ((int) header.width != width_ || (int) header.height != height_) {
+    fclose(f);
+    fprintf(stderr,
+            "Input .fseq is %ux%u but current matrix target is %dx%d\n",
+            header.width, header.height, width_, height_);
+    return false;
+  }
+
+  if (header.frame_size != frame_size_) {
+    fclose(f);
+    fprintf(stderr,
+            "Input .fseq frame payload size %u does not match expected %u\n",
+            header.frame_size, (unsigned) frame_size_);
+    return false;
+  }
+
+  std::vector<Frame> loaded;
+  loaded.reserve(header.frame_count);
+  for (uint32_t i = 0; i < header.frame_count; ++i) {
+    FseqFrameHeader fh = {};
+    if (fread(&fh, sizeof(fh), 1, f) != 1) {
+      fclose(f);
+      return false;
+    }
+
+    Frame frame;
+    frame.hold_time_us = fh.hold_time_us;
+    frame.rgb24.resize(frame_size_);
+    if (fread(frame.rgb24.data(), 1, frame_size_, f) != frame_size_) {
+      fclose(f);
+      return false;
+    }
+    loaded.push_back(frame);
+  }
+
+  if (fclose(f) != 0) {
+    return false;
+  }
+
+  frames_.swap(loaded);
   return true;
 }
 

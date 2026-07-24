@@ -35,6 +35,12 @@ public:
   // byte_count must be width * height * 3.
   bool AddFrame(const uint8_t *rgb24, size_t byte_count, uint32_t hold_time_us);
 
+  // Write the sequence to a .fseq file.
+  bool WriteToFile(const char *path) const;
+
+  // Read a sequence from a .fseq file.
+  bool ReadFromFile(const char *path);
+
   void Clear();
 
   // Play the sequence in a loop until interrupt_received is set (if provided).

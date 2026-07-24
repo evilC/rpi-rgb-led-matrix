@@ -1,6 +1,13 @@
 C# bindings for RGB Matrix library
 ======================================
 
+Contributor notes
+-----------------
+
+Before adding or changing native interop, read:
+- ../../.github/instructions/c-cpp-conventions.instructions.md
+- ../../.github/instructions/bindings-interop.instructions.md
+
 Building
 --------
 

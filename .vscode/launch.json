@@ -62,6 +62,39 @@
             },
             "preLaunchTask": "!Full deploy (C# + C++)"
         },
+        {
+            "name": "Debug frame-sequence-example (Remote)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:RGBLEDMATRIX_REMOTE_DIR}/examples-api-use/frame-sequence-example",
+            "args": [
+                "/root/dev/WearWare/library/fractal_redblack.gif"
+            ],
+            "cwd": "${env:RGBLEDMATRIX_REMOTE_DIR}/examples-api-use",
+            "stopAtEntry": false,
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "pipeTransport": {
+                "pipeCwd": "${workspaceFolder}",
+                "pipeProgram": "wsl",
+                "pipeArgs": [
+                    "ssh",
+                    "${env:RGBLEDMATRIX_REMOTE_MACHINE}"
+                ],
+                "debuggerPath": "/usr/bin/gdb"
+            },
+            "environment": [
+                {
+                    "name": "LD_LIBRARY_PATH",
+                    "value": "${env:RGBLEDMATRIX_REMOTE_DIR}/lib"
+                }
+            ],
+            "sourceFileMap": {
+                "/root/dev/${workspaceFolderBasename}": "${workspaceFolder}"
+            },
+            "preLaunchTask": "!Remote build FrameSequence API + Example"
+        },
 
     ]
 }

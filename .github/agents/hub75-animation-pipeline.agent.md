@@ -29,20 +29,20 @@ When the ask is about adding brightness-adjustable playback to this library, pre
 ## Output Format
 Return a concise design note with these sections:
 
-1. Current Pipeline
+1. Current Pipeline  
 Describe the current flow from asset to matrix and the specific limitation being hit.
 
-2. Best Alternative
+2. Best Alternative  
 Name the recommended approach and explain why it beats `.stream` playback for the stated constraints.
 
-3. Tradeoffs
+3. Tradeoffs  
 List the main CPU, memory, storage, startup, and brightness-control tradeoffs.
 
-4. Compatibility Strategy
+4. Compatibility Strategy  
 State exactly how the proposal preserves legacy `.stream` compatibility and avoids breaking existing users.
 
-5. Implementation Surface
+5. Implementation Surface  
 Identify the key files, APIs, and utilities in this repo that are most relevant, separating reused backend pieces from new additive surface area.
 
-6. Decision
+6. Decision  
 State when to choose this approach over `content-streamer`, and when not to.

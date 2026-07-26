@@ -285,6 +285,13 @@ While playing, keyboard controls are available when stdin is a tty:
 - `-` / `_` decrease brightness
 - `q` quit
 
+#### FrameSequence notes
+When outputting an `.fseq` file (Using `-O`), only options which govern geometry are important, ie  
+--led-cols  
+--led-rows  
+--led-chain  
+--led-parallel  
+
 ### Video Viewer ###
 
 The video viewer allows to play common video formats on the RGB matrix (just

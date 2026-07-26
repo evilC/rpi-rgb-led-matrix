@@ -1,14 +1,14 @@
 // -*- mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; -*-
 //
-// Example showing how to decode an image/animation and play it from an
+// Utility showing how to decode an image/animation and play it from an
 // in-memory frame sequence.
 
 #include "frame-sequence.h"
 #include "led-matrix.h"
 
+#include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
@@ -25,7 +25,7 @@ static void InterruptHandler(int signo) {
 }
 
 class ConsoleBrightnessControl {
-public:
+ public:
   explicit ConsoleBrightnessControl(int initial)
       : initialized_(false), brightness_(Clamp(initial)), old_flags_(0) {
     memset(&old_termios_, 0, sizeof(old_termios_));
@@ -91,7 +91,7 @@ public:
     return brightness_;
   }
 
-private:
+ private:
   static int Clamp(int value) {
     if (value < 1) return 1;
     if (value > 100) return 100;
@@ -155,7 +155,8 @@ static ImageVector LoadAndScaleFrames(const char *filename,
 
 static int usage(const char *progname) {
   fprintf(stderr,
-          "Usage: %s [led-matrix-options] <image-or-fseq> [-O <output.fseq>]\n",
+          "Usage: %s [led-matrix-options] <image-or-fseq> "
+          "[-O<output.fseq> | -O <output.fseq>]\n",
           progname);
   rgb_matrix::PrintMatrixFlags(stderr);
   return 1;
@@ -179,13 +180,18 @@ int main(int argc, char *argv[]) {
     return usage(progname);
   }
 
-  if (argc != 2 && argc != 4) {
+  if (argc != 2 && argc != 3 && argc != 4) {
     return usage(progname);
   }
 
   const char *filename = argv[1];
   const char *output_fseq = NULL;
-  if (argc == 4) {
+  if (argc == 3) {
+    if (strncmp(argv[2], "-O", 2) != 0 || argv[2][2] == '\0') {
+      return usage(progname);
+    }
+    output_fseq = argv[2] + 2;
+  } else if (argc == 4) {
     if (strcmp(argv[2], "-O") != 0) {
       return usage(progname);
     }
@@ -260,7 +266,9 @@ int main(int argc, char *argv[]) {
   const bool brightness_enabled = brightness_control.Init();
   if (brightness_enabled) {
     sequence.Play(matrix, &interrupt_received,
-                  [&brightness_control]() { return brightness_control.PollAndGetBrightness(); });
+                  [&brightness_control]() {
+                    return brightness_control.PollAndGetBrightness();
+                  });
   } else {
     sequence.Play(matrix, &interrupt_received);
   }

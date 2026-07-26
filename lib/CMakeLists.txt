@@ -18,6 +18,7 @@ set(RGBMATRIX_RP1_PIO_VENDOR_DIR
 set(RGBMATRIX_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/canvas.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/content-streamer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/frame-sequence-c.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/frame-sequence.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/graphics.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/led-matrix.h
@@ -33,6 +34,7 @@ set(RGBMATRIX_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/bdf-font.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/content-streamer.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/frame-sequence.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/frame-sequence-c.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/framebuffer.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/gpio.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics.cc

@@ -34,9 +34,6 @@ static inline uint8_t ClampBrightness(int value) {
   return value;
 }
 
-static bool ShouldStop(const volatile bool *interrupt_received) {
-  return interrupt_received != NULL && *interrupt_received;
-}
 }  // namespace
 
 FrameSequence::FrameSequence(int width, int height)
@@ -184,6 +181,19 @@ void FrameSequence::Play(
     RGBMatrix *matrix,
     volatile bool *interrupt_received,
     const BrightnessProvider &brightness_provider) const {
+  StopProvider stop_provider;
+  if (interrupt_received != NULL) {
+    stop_provider = [interrupt_received]() {
+      return *interrupt_received;
+    };
+  }
+  Play(matrix, stop_provider, brightness_provider);
+}
+
+void FrameSequence::Play(
+    RGBMatrix *matrix,
+    const StopProvider &stop_provider,
+    const BrightnessProvider &brightness_provider) const {
   if (matrix == NULL || frames_.empty()) {
     return;
   }
@@ -200,10 +210,10 @@ void FrameSequence::Play(
   }
 
   int last_brightness = -1;
-  while (!ShouldStop(interrupt_received)) {
+  while (!stop_provider || !stop_provider()) {
     for (std::vector<Frame>::const_iterator it = frames_.begin();
          it != frames_.end(); ++it) {
-      if (ShouldStop(interrupt_received)) break;
+      if (stop_provider && stop_provider()) break;
 
       if (brightness_provider) {
         const int wanted = ClampBrightness(brightness_provider());

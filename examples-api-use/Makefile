@@ -2,8 +2,8 @@ include ../config.mk
 
 CFLAGS=-Wall -O3 $(CPU_ARCH_FLAGS) $(LTO_FLAGS) -g -Wextra -Wno-unused-parameter
 CXXFLAGS=$(CFLAGS)
-OBJECTS=demo-main.o minimal-example.o c-example.o text-example.o scrolling-text-example.o clock.o ledcat.o input-example.o pixel-mover.o frame-sequence-example.o
-BINARIES=demo minimal-example c-example text-example scrolling-text-example clock ledcat input-example pixel-mover frame-sequence-example
+OBJECTS=demo-main.o minimal-example.o c-example.o text-example.o scrolling-text-example.o clock.o ledcat.o input-example.o pixel-mover.o
+BINARIES=demo minimal-example c-example text-example scrolling-text-example clock ledcat input-example pixel-mover
 
 # Where our library resides. You mostly only need to change the
 # RGB_LIB_DISTRIBUTION, this is where the library is checked out.
@@ -42,12 +42,6 @@ image-example.o : image-example.cc
 	$(CXX) -I$(RGB_INCDIR) $(CXXFLAGS) $(MAGICK_CXXFLAGS) -c -o $@ $<
 
 image-example: image-example.o $(RGB_LIBRARY)
-	$(CXX) $< -o $@ $(LDFLAGS) $(MAGICK_LDFLAGS)
-
-frame-sequence-example.o : frame-sequence-example.cc
-	$(CXX) -I$(RGB_INCDIR) $(CXXFLAGS) $(MAGICK_CXXFLAGS) -c -o $@ $<
-
-frame-sequence-example: frame-sequence-example.o $(RGB_LIBRARY)
 	$(CXX) $< -o $@ $(LDFLAGS) $(MAGICK_LDFLAGS)
 
 # Since the C example uses the C++ library underneath, which depends on C++

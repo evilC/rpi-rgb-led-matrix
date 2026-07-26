@@ -8,7 +8,7 @@ include ../config.mk
 OBJECTS=gpio.o led-matrix.o options-initialize.o framebuffer.o \
 	thread.o bdf-font.o graphics.o led-matrix-c.o hardware-mapping.o \
 	pixel-mapper.o multiplex-mappers.o frame-sequence.o \
-	content-streamer.o content-streamer-c.o \
+	content-streamer.o content-streamer-c.o frame-sequence-c.o \
 	rp1/rp1_pio_backend.o rp1/rp1_pio_support.o rp1/rp1_rio_backend.o
 
 TARGET=librgbmatrix

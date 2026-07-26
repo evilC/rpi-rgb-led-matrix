@@ -11,6 +11,8 @@ public class RGBLedMatrix : IDisposable
     private IntPtr matrix;
     private bool disposedValue = false;
 
+    internal IntPtr NativeHandle => matrix;
+
     /// <summary>
     /// Initializes a new matrix.
     /// </summary>

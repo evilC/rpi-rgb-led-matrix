@@ -24,6 +24,7 @@ class RGBMatrix;
 class FrameSequence {
 public:
   typedef std::function<int(void)> BrightnessProvider;
+  typedef std::function<bool(void)> StopProvider;
 
   FrameSequence(int width, int height);
 
@@ -48,6 +49,12 @@ public:
   // to the matrix (clamped to 1..100).
   void Play(RGBMatrix *matrix,
             volatile bool *interrupt_received = NULL,
+            const BrightnessProvider &brightness_provider = BrightnessProvider()) const;
+
+  // Callback-driven form of Play(), useful for language binding wrappers.
+  // If stop_provider is set, it is checked between frames to stop playback.
+  void Play(RGBMatrix *matrix,
+            const StopProvider &stop_provider,
             const BrightnessProvider &brightness_provider = BrightnessProvider()) const;
 
 private:

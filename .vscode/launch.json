@@ -63,14 +63,14 @@
             "preLaunchTask": "!Full deploy (C# + C++)"
         },
         {
-            "name": "Debug frame-sequence-example (Remote)",
+            "name": "Debug frame-sequence-player (Remote)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${env:RGBLEDMATRIX_REMOTE_DIR}/examples-api-use/frame-sequence-example",
+            "program": "${env:RGBLEDMATRIX_REMOTE_DIR}/utils/frame-sequence-player",
             "args": [
                 "/root/dev/WearWare/library/fractal_redblack.gif"
             ],
-            "cwd": "${env:RGBLEDMATRIX_REMOTE_DIR}/examples-api-use",
+            "cwd": "${env:RGBLEDMATRIX_REMOTE_DIR}/utils",
             "stopAtEntry": false,
             "externalConsole": false,
             "MIMode": "gdb",
@@ -93,7 +93,7 @@
             "sourceFileMap": {
                 "/root/dev/${workspaceFolderBasename}": "${workspaceFolder}"
             },
-            "preLaunchTask": "!Remote build FrameSequence API + Example"
+            "preLaunchTask": "!Remote build FrameSequence API + Utility"
         },
 
     ]

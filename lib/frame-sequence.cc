@@ -15,6 +15,7 @@ namespace rgb_matrix {
 
 namespace {
 static const uint32_t kFseqMagic = 0x51455346;  // "FSEQ"
+static const useconds_t kStopPollIntervalUs = 10000;
 
 struct FseqHeader {
   uint32_t magic;
@@ -289,7 +290,16 @@ bool FrameSequence::PlayOneSequence(
 
     offscreen = matrix->SwapOnVSync(offscreen);
     if (it->hold_time_us > 0) {
-      usleep(it->hold_time_us);
+      uint32_t remaining_us = it->hold_time_us;
+      while (remaining_us > 0) {
+        if ((stop_provider && stop_provider()) || (should_stop && should_stop())) {
+          break;
+        }
+
+        const useconds_t sleep_us = remaining_us > kStopPollIntervalUs ? kStopPollIntervalUs : remaining_us;
+        usleep(sleep_us);
+        remaining_us -= sleep_us;
+      }
     }
   }
 

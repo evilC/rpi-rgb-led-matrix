@@ -44,17 +44,26 @@ public:
 
   void Clear();
 
-  // Play the sequence in a loop until interrupt_received is set (if provided).
-  // If brightness_provider is provided, it is polled per frame and applied
-  // to the matrix (clamped to 1..100).
+  // Play the sequence forever until interrupted.
+  void PlayForever(RGBMatrix *matrix,
+                    const StopProvider &stop_provider = StopProvider(),
+                    const BrightnessProvider &brightness_provider = BrightnessProvider()) const;
+
+  // Play the sequence a fixed number of times.
+  void PlayCount(RGBMatrix *matrix,
+                 uint32_t play_count,
+                 const StopProvider &stop_provider = StopProvider(),
+                 const BrightnessProvider &brightness_provider = BrightnessProvider()) const;
+
+  // Play the sequence for a fixed duration in milliseconds.
+  void PlayDuration(RGBMatrix *matrix,
+                    uint32_t duration_ms,
+                    const StopProvider &stop_provider = StopProvider(),
+                    const BrightnessProvider &brightness_provider = BrightnessProvider()) const;
+
+  // Legacy convenience wrapper kept for compatibility with older callers.
   void Play(RGBMatrix *matrix,
             volatile bool *interrupt_received = NULL,
-            const BrightnessProvider &brightness_provider = BrightnessProvider()) const;
-
-  // Callback-driven form of Play(), useful for language binding wrappers.
-  // If stop_provider is set, it is checked between frames to stop playback.
-  void Play(RGBMatrix *matrix,
-            const StopProvider &stop_provider,
             const BrightnessProvider &brightness_provider = BrightnessProvider()) const;
 
 private:
@@ -67,6 +76,11 @@ private:
   int height_;
   size_t frame_size_;
   std::vector<Frame> frames_;
+
+  bool PlayOneSequence(RGBMatrix *matrix,
+                      const StopProvider &stop_provider,
+                      const BrightnessProvider &brightness_provider,
+                      const std::function<bool(void)> &should_stop) const;
 };
 
 }  // namespace rgb_matrix

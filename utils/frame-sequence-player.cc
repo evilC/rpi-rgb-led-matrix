@@ -264,13 +264,15 @@ int main(int argc, char *argv[]) {
 
   ConsoleBrightnessControl brightness_control(matrix_options.brightness);
   const bool brightness_enabled = brightness_control.Init();
+  auto stop_provider = []() {
+    return interrupt_received;
+  };
   if (brightness_enabled) {
-    sequence.Play(matrix, &interrupt_received,
-                  [&brightness_control]() {
-                    return brightness_control.PollAndGetBrightness();
-                  });
+    sequence.PlayForever(matrix, stop_provider, [&brightness_control]() {
+      return brightness_control.PollAndGetBrightness();
+    });
   } else {
-    sequence.Play(matrix, &interrupt_received);
+    sequence.PlayForever(matrix, stop_provider);
   }
 
   matrix->Clear();

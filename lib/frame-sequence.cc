@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <chrono>
 
 #include "led-matrix.h"
 
@@ -177,66 +178,122 @@ void FrameSequence::Clear() {
   frames_.clear();
 }
 
-void FrameSequence::Play(
+void FrameSequence::PlayForever(
     RGBMatrix *matrix,
-    volatile bool *interrupt_received,
+    const StopProvider &stop_provider,
     const BrightnessProvider &brightness_provider) const {
-  StopProvider stop_provider;
-  if (interrupt_received != NULL) {
-    stop_provider = [interrupt_received]() {
-      return *interrupt_received;
-    };
+  auto always_continue = []() {
+    return false;
+  };
+  while (!stop_provider || !stop_provider()) {
+    if (!PlayOneSequence(matrix, stop_provider, brightness_provider, always_continue)) {
+      break;
+    }
   }
-  Play(matrix, stop_provider, brightness_provider);
+}
+
+void FrameSequence::PlayCount(
+    RGBMatrix *matrix,
+    uint32_t play_count,
+    const StopProvider &stop_provider,
+    const BrightnessProvider &brightness_provider) const {
+  if (play_count == 0) {
+    return;
+  }
+  auto always_continue = []() {
+    return false;
+  };
+  for (uint32_t i = 0; i < play_count; ++i) {
+    if (stop_provider && stop_provider()) {
+      break;
+    }
+    if (!PlayOneSequence(matrix, stop_provider, brightness_provider, always_continue)) {
+      break;
+    }
+  }
+}
+
+void FrameSequence::PlayDuration(
+    RGBMatrix *matrix,
+    uint32_t duration_ms,
+    const StopProvider &stop_provider,
+    const BrightnessProvider &brightness_provider) const {
+  if (duration_ms == 0) {
+    return;
+  }
+
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(duration_ms);
+  auto should_stop = [&deadline]() {
+    return std::chrono::steady_clock::now() >= deadline;
+  };
+
+  while ((!stop_provider || !stop_provider()) && !should_stop()) {
+    if (!PlayOneSequence(matrix, stop_provider, brightness_provider, should_stop)) {
+      break;
+    }
+  }
 }
 
 void FrameSequence::Play(
     RGBMatrix *matrix,
-    const StopProvider &stop_provider,
+    volatile bool *interrupt_received,
     const BrightnessProvider &brightness_provider) const {
+  auto stop_provider = [interrupt_received]() {
+    return interrupt_received != NULL && *interrupt_received;
+  };
+  PlayForever(matrix, stop_provider, brightness_provider);
+}
+
+bool FrameSequence::PlayOneSequence(
+    RGBMatrix *matrix,
+    const StopProvider &stop_provider,
+    const BrightnessProvider &brightness_provider,
+    const std::function<bool(void)> &should_stop) const {
   if (matrix == NULL || frames_.empty()) {
-    return;
+    return false;
   }
 
   if (matrix->width() != width_ || matrix->height() != height_) {
     fprintf(stderr, "FrameSequence is %dx%d but matrix is %dx%d\n",
             width_, height_, matrix->width(), matrix->height());
-    return;
+    return false;
   }
 
   FrameCanvas *offscreen = matrix->CreateFrameCanvas();
   if (offscreen == NULL) {
-    return;
+    return false;
   }
 
   int last_brightness = -1;
-  while (!stop_provider || !stop_provider()) {
-    for (std::vector<Frame>::const_iterator it = frames_.begin();
-         it != frames_.end(); ++it) {
-      if (stop_provider && stop_provider()) break;
+  for (std::vector<Frame>::const_iterator it = frames_.begin();
+       it != frames_.end(); ++it) {
+    if ((stop_provider && stop_provider()) || (should_stop && should_stop())) {
+      break;
+    }
 
-      if (brightness_provider) {
-        const int wanted = ClampBrightness(brightness_provider());
-        if (wanted != last_brightness) {
-          matrix->SetBrightness(wanted);
-          last_brightness = wanted;
-        }
-      }
-
-      const uint8_t *p = it->rgb24.data();
-      for (int y = 0; y < height_; ++y) {
-        for (int x = 0; x < width_; ++x) {
-          offscreen->SetPixel(x, y, p[0], p[1], p[2]);
-          p += 3;
-        }
-      }
-
-      offscreen = matrix->SwapOnVSync(offscreen);
-      if (it->hold_time_us > 0) {
-        usleep(it->hold_time_us);
+    if (brightness_provider) {
+      const int wanted = ClampBrightness(brightness_provider());
+      if (wanted != last_brightness) {
+        matrix->SetBrightness(wanted);
+        last_brightness = wanted;
       }
     }
+
+    const uint8_t *p = it->rgb24.data();
+    for (int y = 0; y < height_; ++y) {
+      for (int x = 0; x < width_; ++x) {
+        offscreen->SetPixel(x, y, p[0], p[1], p[2]);
+        p += 3;
+      }
+    }
+
+    offscreen = matrix->SwapOnVSync(offscreen);
+    if (it->hold_time_us > 0) {
+      usleep(it->hold_time_us);
+    }
   }
+
+  return true;
 }
 
 }  // namespace rgb_matrix

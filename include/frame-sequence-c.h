@@ -40,6 +40,22 @@ int frame_sequence_read_from_file(FrameSequenceHandle sequence, const char *path
  * - interrupt_received: optional pointer; playback stops when *interrupt_received != 0.
  * - brightness_percent: optional pointer; if set, value is polled per frame.
  */
+void frame_sequence_play_forever(FrameSequenceHandle sequence,
+                                 struct RGBLedMatrix *matrix,
+                                 const volatile int *interrupt_received,
+                                 const int *brightness_percent);
+void frame_sequence_play_count(FrameSequenceHandle sequence,
+                               struct RGBLedMatrix *matrix,
+                               uint32_t play_count,
+                               const volatile int *interrupt_received,
+                               const int *brightness_percent);
+void frame_sequence_play_duration(FrameSequenceHandle sequence,
+                                  struct RGBLedMatrix *matrix,
+                                  uint32_t duration_ms,
+                                  const volatile int *interrupt_received,
+                                  const int *brightness_percent);
+
+/* Legacy compatibility wrapper for older callers. */
 void frame_sequence_play(FrameSequenceHandle sequence,
                          struct RGBLedMatrix *matrix,
                          const volatile int *interrupt_received,

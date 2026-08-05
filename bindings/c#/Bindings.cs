@@ -143,6 +143,26 @@ internal static class Bindings
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool frame_sequence_read_from_file(IntPtr sequence, string path);
 
+    [DllImport(Lib, EntryPoint = "frame_sequence_play_forever")]
+    public static extern void frame_sequence_play_forever(IntPtr sequence,
+                                                           IntPtr matrix,
+                                                           IntPtr interruptReceived,
+                                                           IntPtr brightnessPercent);
+
+    [DllImport(Lib, EntryPoint = "frame_sequence_play_count")]
+    public static extern void frame_sequence_play_count(IntPtr sequence,
+                                                        IntPtr matrix,
+                                                        uint playCount,
+                                                        IntPtr interruptReceived,
+                                                        IntPtr brightnessPercent);
+
+    [DllImport(Lib, EntryPoint = "frame_sequence_play_duration")]
+    public static extern void frame_sequence_play_duration(IntPtr sequence,
+                                                           IntPtr matrix,
+                                                           uint durationMs,
+                                                           IntPtr interruptReceived,
+                                                           IntPtr brightnessPercent);
+
     [DllImport(Lib, EntryPoint = "frame_sequence_play")]
     public static extern void frame_sequence_play(IntPtr sequence,
                                                   IntPtr matrix,

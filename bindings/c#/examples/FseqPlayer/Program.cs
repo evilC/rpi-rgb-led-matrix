@@ -69,5 +69,5 @@ var keyThread = new Thread(() =>
 keyThread.IsBackground = true;
 keyThread.Start();
 
-player.Play(path);
+player.PlayForever(path);
 Console.WriteLine("\nDone.");

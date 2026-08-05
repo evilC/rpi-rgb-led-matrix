@@ -62,29 +62,66 @@ int frame_sequence_read_from_file(FrameSequenceHandle sequence, const char *path
   return s->ReadFromFile(path) ? 1 : 0;
 }
 
-void frame_sequence_play(FrameSequenceHandle sequence,
-                         struct RGBLedMatrix *matrix,
-                         const volatile int *interrupt_received,
-                         const int *brightness_percent) {
-  auto s = reinterpret_cast<rgb_matrix::FrameSequence*>(sequence);
-  auto m = reinterpret_cast<rgb_matrix::RGBMatrix*>(matrix);
-  if (s == nullptr || m == nullptr) return;
-
+static rgb_matrix::FrameSequence::StopProvider BuildStopProvider(const volatile int *interrupt_received) {
   rgb_matrix::FrameSequence::StopProvider stop_provider;
   if (interrupt_received != nullptr) {
     stop_provider = [interrupt_received]() {
       return *interrupt_received != 0;
     };
   }
+  return stop_provider;
+}
 
+static rgb_matrix::FrameSequence::BrightnessProvider BuildBrightnessProvider(const int *brightness_percent) {
   rgb_matrix::FrameSequence::BrightnessProvider brightness_provider;
   if (brightness_percent != nullptr) {
     brightness_provider = [brightness_percent]() {
       return *brightness_percent;
     };
   }
+  return brightness_provider;
+}
 
-  s->Play(m, stop_provider, brightness_provider);
+void frame_sequence_play_forever(FrameSequenceHandle sequence,
+                                 struct RGBLedMatrix *matrix,
+                                 const volatile int *interrupt_received,
+                                 const int *brightness_percent) {
+  auto s = reinterpret_cast<rgb_matrix::FrameSequence*>(sequence);
+  auto m = reinterpret_cast<rgb_matrix::RGBMatrix*>(matrix);
+  if (s == nullptr || m == nullptr) return;
+
+  s->PlayForever(m, BuildStopProvider(interrupt_received), BuildBrightnessProvider(brightness_percent));
+}
+
+void frame_sequence_play_count(FrameSequenceHandle sequence,
+                               struct RGBLedMatrix *matrix,
+                               uint32_t play_count,
+                               const volatile int *interrupt_received,
+                               const int *brightness_percent) {
+  auto s = reinterpret_cast<rgb_matrix::FrameSequence*>(sequence);
+  auto m = reinterpret_cast<rgb_matrix::RGBMatrix*>(matrix);
+  if (s == nullptr || m == nullptr) return;
+
+  s->PlayCount(m, play_count, BuildStopProvider(interrupt_received), BuildBrightnessProvider(brightness_percent));
+}
+
+void frame_sequence_play_duration(FrameSequenceHandle sequence,
+                                  struct RGBLedMatrix *matrix,
+                                  uint32_t duration_ms,
+                                  const volatile int *interrupt_received,
+                                  const int *brightness_percent) {
+  auto s = reinterpret_cast<rgb_matrix::FrameSequence*>(sequence);
+  auto m = reinterpret_cast<rgb_matrix::RGBMatrix*>(matrix);
+  if (s == nullptr || m == nullptr) return;
+
+  s->PlayDuration(m, duration_ms, BuildStopProvider(interrupt_received), BuildBrightnessProvider(brightness_percent));
+}
+
+void frame_sequence_play(FrameSequenceHandle sequence,
+                         struct RGBLedMatrix *matrix,
+                         const volatile int *interrupt_received,
+                         const int *brightness_percent) {
+  frame_sequence_play_forever(sequence, matrix, interrupt_received, brightness_percent);
 }
 
 }  // extern "C"

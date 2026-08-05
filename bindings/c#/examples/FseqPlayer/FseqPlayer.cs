@@ -27,13 +27,13 @@ public sealed class FseqPlayer : IDisposable
     /// Plays an fseq file on the LED matrix.
     /// </summary>
     /// <param name="sequencePath">The path to the .fseq file.</param>
-    public void Play(string sequencePath)
+    public void PlayForever(string sequencePath)
     {
         ObjectDisposedException.ThrowIf(_disposed, GetType());
         using var sequence = new FrameSequence(_width, _height);
         sequence.ReadFromFile(sequencePath);
         _stop[0] = 0;
-        sequence.Play(_matrix, _stop, _brightness);
+        sequence.PlayForever(_matrix, _stop, _brightness);
     }
 
     public void Stop()

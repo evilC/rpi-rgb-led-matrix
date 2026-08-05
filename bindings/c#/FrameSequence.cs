@@ -51,11 +51,11 @@ public sealed class FrameSequence : IDisposable
     }
 
     /// <summary>
-    /// Play in a loop.
+    /// Play the sequence forever.
     /// Stop by setting interruptReceived[0] to non-zero.
     /// Adjust brightness dynamically by updating brightnessPercent[0].
     /// </summary>
-    public void Play(RGBLedMatrix matrix, int[] interruptReceived, int[] brightnessPercent)
+    public void PlayForever(RGBLedMatrix matrix, int[] interruptReceived, int[] brightnessPercent)
     {
         ObjectDisposedException.ThrowIf(_sequence == IntPtr.Zero, GetType());
         ArgumentNullException.ThrowIfNull(matrix);
@@ -70,9 +70,9 @@ public sealed class FrameSequence : IDisposable
         var brightHandle = GCHandle.Alloc(brightnessPercent, GCHandleType.Pinned);
         try
         {
-            frame_sequence_play(_sequence, matrix.NativeHandle,
-                                stopHandle.AddrOfPinnedObject(),
-                                brightHandle.AddrOfPinnedObject());
+            frame_sequence_play_forever(_sequence, matrix.NativeHandle,
+                                        stopHandle.AddrOfPinnedObject(),
+                                        brightHandle.AddrOfPinnedObject());
         }
         finally
         {
@@ -82,13 +82,89 @@ public sealed class FrameSequence : IDisposable
     }
 
     /// <summary>
-    /// Play in a loop with fixed brightness until externally interrupted (e.g. SIGINT).
+    /// Play the sequence a fixed number of times.
+    /// Stop by setting interruptReceived[0] to non-zero.
+    /// Adjust brightness dynamically by updating brightnessPercent[0].
     /// </summary>
-    public void Play(RGBLedMatrix matrix)
+    public void PlayCount(RGBLedMatrix matrix, uint playCount, int[] interruptReceived, int[] brightnessPercent)
     {
         ObjectDisposedException.ThrowIf(_sequence == IntPtr.Zero, GetType());
         ArgumentNullException.ThrowIfNull(matrix);
-        frame_sequence_play(_sequence, matrix.NativeHandle, IntPtr.Zero, IntPtr.Zero);
+        ArgumentNullException.ThrowIfNull(interruptReceived);
+        ArgumentNullException.ThrowIfNull(brightnessPercent);
+        if (interruptReceived.Length < 1)
+            throw new ArgumentException("interruptReceived must have at least one element.");
+        if (brightnessPercent.Length < 1)
+            throw new ArgumentException("brightnessPercent must have at least one element.");
+
+        var stopHandle = GCHandle.Alloc(interruptReceived, GCHandleType.Pinned);
+        var brightHandle = GCHandle.Alloc(brightnessPercent, GCHandleType.Pinned);
+        try
+        {
+            frame_sequence_play_count(_sequence, matrix.NativeHandle, playCount,
+                                      stopHandle.AddrOfPinnedObject(),
+                                      brightHandle.AddrOfPinnedObject());
+        }
+        finally
+        {
+            brightHandle.Free();
+            stopHandle.Free();
+        }
+    }
+
+    /// <summary>
+    /// Play the sequence for a fixed duration in milliseconds.
+    /// </summary>
+    public void PlayDuration(RGBLedMatrix matrix, uint durationMs, int[] interruptReceived, int[] brightnessPercent)
+    {
+        ObjectDisposedException.ThrowIf(_sequence == IntPtr.Zero, GetType());
+        ArgumentNullException.ThrowIfNull(matrix);
+        ArgumentNullException.ThrowIfNull(interruptReceived);
+        ArgumentNullException.ThrowIfNull(brightnessPercent);
+        if (interruptReceived.Length < 1)
+            throw new ArgumentException("interruptReceived must have at least one element.");
+        if (brightnessPercent.Length < 1)
+            throw new ArgumentException("brightnessPercent must have at least one element.");
+
+        var stopHandle = GCHandle.Alloc(interruptReceived, GCHandleType.Pinned);
+        var brightHandle = GCHandle.Alloc(brightnessPercent, GCHandleType.Pinned);
+        try
+        {
+            frame_sequence_play_duration(_sequence, matrix.NativeHandle, durationMs,
+                                         stopHandle.AddrOfPinnedObject(),
+                                         brightHandle.AddrOfPinnedObject());
+        }
+        finally
+        {
+            brightHandle.Free();
+            stopHandle.Free();
+        }
+    }
+
+    /// <summary>
+    /// Legacy alias for forever playback.
+    /// </summary>
+    public void PlayForever(RGBLedMatrix matrix)
+    {
+        ObjectDisposedException.ThrowIf(_sequence == IntPtr.Zero, GetType());
+        ArgumentNullException.ThrowIfNull(matrix);
+        frame_sequence_play_forever(_sequence, matrix.NativeHandle, IntPtr.Zero, IntPtr.Zero);
+    }
+
+    /// <summary>
+    /// Legacy alias for forever playback.
+    /// </summary>
+    public void Play(RGBLedMatrix matrix)
+    {
+        PlayForever(matrix);
+    }
+
+    /// <summary>
+    /// Legacy alias for forever playback.
+    /// </summary>
+    public void Play(RGBLedMatrix matrix, int[] interruptReceived, int[] brightnessPercent)
+    {
+        PlayForever(matrix, interruptReceived, brightnessPercent);
     }
 
     public void Dispose()

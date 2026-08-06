@@ -260,7 +260,7 @@ bool FrameSequence::PlayOneSequence(
     return false;
   }
 
-  FrameCanvas *offscreen = matrix->CreateFrameCanvas();
+  FrameCanvas *offscreen = matrix->SwapOnVSync(NULL);
   if (offscreen == NULL) {
     return false;
   }
